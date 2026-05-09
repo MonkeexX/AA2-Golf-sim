@@ -468,8 +468,8 @@ Transform:
   m_GameObject: {fileID: 918962494}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.69314474, y: 0.69314474, z: 0.69314474}
+  m_LocalPosition: {x: 0, y: 0.4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 949161560}
@@ -498,7 +498,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e823cd5b5d27c0f4b8256e7c12ee3e6d, type: 2}
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -544,7 +544,7 @@ LineRenderer:
       serializedVersion: 2
       key0: {r: 1, g: 1, b: 1, a: 1}
       key1: {r: 1, g: 1, b: 1, a: 1}
-      key2: {r: 0, g: 0, b: 0, a: 0}
+      key2: {r: 0, g: 0, b: 0, a: 1}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
       key5: {r: 0, g: 0, b: 0, a: 0}
@@ -560,14 +560,14 @@ LineRenderer:
       ctime7: 0
       atime0: 0
       atime1: 65535
-      atime2: 0
+      atime2: 65535
       atime3: 0
       atime4: 0
       atime5: 0
       atime6: 0
       atime7: 0
       m_Mode: 0
-      m_ColorSpace: -1
+      m_ColorSpace: 0
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
     numCornerVertices: 0
@@ -578,7 +578,7 @@ LineRenderer:
     shadowBias: 0.5
     generateLightingData: 0
   m_MaskInteraction: 0
-  m_UseWorldSpace: 0
+  m_UseWorldSpace: 1
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
 --- !u!1 &949161550 stripped
@@ -606,6 +606,9 @@ MonoBehaviour:
   forcePower: 100
   maxForcePower: 300
   chargeRate: 200
+  lineRenderer: {fileID: 918962496}
+  trajectorySteps: 100
+  simulationStep: 0.1
 --- !u!4 &949161560 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 9106389137671897206, guid: 6036af1ef1c9f7647a6d8dee384dc68b, type: 3}
@@ -727,7 +730,7 @@ Transform:
   m_GameObject: {fileID: 1130861906}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.46, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 111.11002, y: 1, z: 569.4107}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -759,11 +762,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9106389137671897206, guid: 6036af1ef1c9f7647a6d8dee384dc68b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 5.5
+      value: 1.03
       objectReference: {fileID: 0}
     - target: {fileID: 9106389137671897206, guid: 6036af1ef1c9f7647a6d8dee384dc68b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12.098049
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9106389137671897206, guid: 6036af1ef1c9f7647a6d8dee384dc68b, type: 3}
       propertyPath: m_LocalRotation.w

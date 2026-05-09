@@ -11,9 +11,13 @@ public class BallPhysics : MonoBehaviour
     public float forcePower = 100;
     public float maxForcePower = 300f;
     public float chargeRate = 200f;
+    public LineRenderer lineRenderer;
+    public int trajectorySteps = 30;
+    public float simulationStep = 0.1f;
 
     private float currentForce;
     private bool isCharging;
+
 
     private Vector3 dir;
 
@@ -43,6 +47,16 @@ public class BallPhysics : MonoBehaviour
             currentForce = 0f;
         }
 
+        if (isCharging)
+        {
+            DrawTrajectory();
+        }
+        else
+        {
+            if (lineRenderer != null)
+                lineRenderer.positionCount = 0;
+        }
+
         ApplyForces();
 
         velocity += acceleration * dt;
@@ -54,6 +68,47 @@ public class BallPhysics : MonoBehaviour
         HandleCollisions();
 
         acceleration = Vector3.zero;
+    }
+
+    void DrawTrajectory()
+    {
+        if (lineRenderer == null) return;
+        if (!isCharging) return;
+
+        Vector3 pos = transform.position;
+
+        Vector3 vel = GetPredictedInitialVelocity();
+
+        Vector3[] points = new Vector3[trajectorySteps];
+
+        for (int i = 0; i < trajectorySteps; i++)
+        {
+            points[i] = pos;
+
+            vel += Physics.gravity * simulationStep;
+            vel *= (1f - airDrag * simulationStep);
+
+            pos += vel * simulationStep;
+
+            if (pos.y < 0f)
+            {
+                for (int j = i; j < trajectorySteps; j++)
+                    points[j] = pos;
+                break;
+            }
+        }
+
+        lineRenderer.positionCount = trajectorySteps;
+        lineRenderer.SetPositions(points);
+    }
+
+    Vector3 GetPredictedInitialVelocity()
+    {
+        Vector3 dir = Camera.main.transform.forward;
+        dir.y = 0f;
+        dir.Normalize();
+
+        return dir * currentForce;
     }
 
     void ApplyImpulse(float force)
