@@ -9,6 +9,11 @@ public class BallPhysics : MonoBehaviour
     public float rollingFriction = 0.2f;
     public float airDrag = 0.05f;
     public float forcePower = 100;
+    public float maxForcePower = 300f;
+    public float chargeRate = 200f;
+
+    private float currentForce;
+    private bool isCharging;
 
     private Vector3 dir;
 
@@ -16,9 +21,26 @@ public class BallPhysics : MonoBehaviour
     {
         float dt = Time.deltaTime;
 
+        // INICIO carga
         if (Input.GetMouseButtonDown(0))
         {
-            ApplyImpulse();
+            isCharging = true;
+            currentForce = 0f;
+        }
+
+        // CARGA mientras mantienes pulsado
+        if (Input.GetMouseButton(0) && isCharging)
+        {
+            currentForce += chargeRate * dt;
+            currentForce = Mathf.Clamp(currentForce, 0f, maxForcePower);
+        }
+
+        // DISPARO al soltar
+        if (Input.GetMouseButtonUp(0) && isCharging)
+        {
+            ApplyImpulse(currentForce);
+            isCharging = false;
+            currentForce = 0f;
         }
 
         ApplyForces();
@@ -32,14 +54,15 @@ public class BallPhysics : MonoBehaviour
         HandleCollisions();
 
         acceleration = Vector3.zero;
-
     }
 
-    void ApplyImpulse()
+    void ApplyImpulse(float force)
     {
-        dir = Camera.main.transform.forward;
+        Vector3 dir = Camera.main.transform.forward;
+        dir.y = 0f;
+        dir.Normalize();
 
-        velocity += dir.normalized * forcePower;
+        velocity += dir * force;
     }
 
     void MoveWithCollisions(float dt)
