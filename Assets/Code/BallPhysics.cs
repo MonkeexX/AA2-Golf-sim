@@ -20,6 +20,8 @@ public class BallPhysics : MonoBehaviour
     public float dragCoeff = 0.47f;
     public float ballRadius = 0.5f;
 
+    [HideInInspector] public float currentFriction = 0.2f;
+
     private float crossSectionArea;
     private float currentForce;
     private bool isCharging;
@@ -27,6 +29,7 @@ public class BallPhysics : MonoBehaviour
     void Awake()
     {
         crossSectionArea = Mathf.PI * ballRadius * ballRadius;
+        currentFriction = rollingFriction;
     }
 
     void Update()
@@ -160,7 +163,7 @@ public class BallPhysics : MonoBehaviour
 
         if (velocity.magnitude > 0.01f)
         {
-            Vector3 friction = -velocity.normalized * rollingFriction;
+            Vector3 friction = -velocity.normalized * currentFriction;
             acceleration += (friction / mass);
         }
 
@@ -191,7 +194,7 @@ public class BallPhysics : MonoBehaviour
         float speed = velocity.magnitude;
         if (speed > 0.001f)
         {
-            float frictionFactor = 1f - (rollingFriction * dt);
+            float frictionFactor = 1f - (currentFriction * dt);
             if (frictionFactor < 0f) frictionFactor = 0f;
             velocity *= frictionFactor;
         }

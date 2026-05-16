@@ -330,7 +330,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: de877881dd92d6a419fc477d19e70ec1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -359,7 +359,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 365667256}
-  m_Mesh: {fileID: 0}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!4 &365667261
 Transform:
   m_ObjectHideFlags: 0
@@ -736,6 +736,7 @@ MonoBehaviour:
   airDensity: 1.225
   dragCoeff: 0.47
   ballRadius: 0.5
+  currentFriction: 0.2
 --- !u!4 &949161560 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 9106389137671897206, guid: 6036af1ef1c9f7647a6d8dee384dc68b, type: 3}
@@ -767,6 +768,7 @@ GameObject:
   - component: {fileID: 1130861909}
   - component: {fileID: 1130861908}
   - component: {fileID: 1130861907}
+  - component: {fileID: 1130861911}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -818,7 +820,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: c8826c726d76050419173b0e5f588f17, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -863,6 +865,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1130861911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1130861906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8572700e009692943992dfe972788b8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrainType: 0
+  ball: {fileID: 949161556}
 --- !u!1 &1193334493
 GameObject:
   m_ObjectHideFlags: 0
@@ -984,6 +1000,7 @@ GameObject:
   - component: {fileID: 1559428464}
   - component: {fileID: 1559428463}
   - component: {fileID: 1559428462}
+  - component: {fileID: 1559428466}
   m_Layer: 0
   m_Name: Cube (2)
   m_TagString: Untagged
@@ -1035,7 +1052,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: c8826c726d76050419173b0e5f588f17, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1080,6 +1097,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1559428466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1559428461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8572700e009692943992dfe972788b8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrainType: 0
+  ball: {fileID: 949161556}
 --- !u!1001 &6316361296839152658
 PrefabInstance:
   m_ObjectHideFlags: 0
