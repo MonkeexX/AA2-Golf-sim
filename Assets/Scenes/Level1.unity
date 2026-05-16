@@ -721,16 +721,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a752dfe1483659438c1c277ad4338bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mass: 10
+  mass: 1
   ballRadius: 0.5
-  maxForcePower: 300
-  chargeRate: 200
+  maxForcePower: 5
+  chargeRate: 4
   defaultFriction: 0.2
   airDensity: 1.225
   dragCoeff: 0.47
   lineRenderer: {fileID: 918962496}
   trajectorySteps: 100
   simulationStep: 0.1
+  speedVisualScale: 10
   velocity: {x: 0, y: 0, z: 0}
   currentFriction: 0.2
 --- !u!4 &949161560 stripped
@@ -1141,6 +1142,7 @@ MonoBehaviour:
   ball: {fileID: 949161556}
   ballSpawnPoint: {fileID: 949161560}
   maxEntrySpeed: 0.5
+  holeRadius: 4
   nextSceneName: Level2
   winUI: {fileID: 0}
   failUI: {fileID: 0}
@@ -1161,7 +1163,7 @@ CapsuleCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Radius: 0.5
   m_Height: 2

@@ -1,13 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Detects when the ball enters the hole trigger.
-/// Win condition: speed < 0.5 m/s on entry.
-/// Loads the next scene or shows a "you win" screen on the last level.
-/// Attach this to the Hole GameObject (with a trigger collider).
-/// </summary>
-[RequireComponent(typeof(Collider))]
 public class LevelLoader : MonoBehaviour
 {
     [Header("References")]
@@ -16,13 +9,15 @@ public class LevelLoader : MonoBehaviour
 
     [Header("Win Condition")]
     public float maxEntrySpeed = 0.5f;
+    public float holeRadius = 0.8f;
 
     [Header("Scene Navigation")]
-    public string nextSceneName;          // leave empty on last level
+    public string nextSceneName;
     public GameObject winUI;
     public GameObject failUI;
 
-    // ?? Level-start ???????????????????????????????????????????????????
+    private bool levelFinished = false;
+
     void Start()
     {
         if (winUI) winUI.SetActive(false);
@@ -30,19 +25,37 @@ public class LevelLoader : MonoBehaviour
 
         if (ball != null && ballSpawnPoint != null)
             ball.ResetToPosition(ballSpawnPoint.position);
+
+        Debug.Log($"[LevelLoader] Iniciado. Hole en {transform.position}, radio={holeRadius}");
     }
 
-    // ?? Hole detection ????????????????????????????????????????????????
-    void OnTriggerEnter(Collider other)
+    void Update()
     {
-        if (!other.CompareTag("Ball")) return;   // tag your ball GameObject "Ball"
+        if (levelFinished || ball == null) return;
 
-        float speed = ball.velocity.magnitude;
+        float dist = Vector3.Distance(ball.transform.position, transform.position);
 
-        if (speed <= maxEntrySpeed)
-            HandleWin();
-        else
-            HandleFail();
+        // Log continuo para ver distancia en tiempo real
+        Debug.Log($"[LevelLoader] Distancia al hoyo: {dist:F2} | Velocidad: {ball.velocity.magnitude:F2} m/s");
+
+        if (dist <= holeRadius)
+        {
+            float speed = ball.velocity.magnitude;
+            Debug.Log($"[LevelLoader] ¡Bola dentro del radio! Speed={speed:F2} | Límite={maxEntrySpeed}");
+
+            levelFinished = true;
+
+            if (speed <= maxEntrySpeed)
+            {
+                Debug.Log("[LevelLoader] ? CONDICIÓN CUMPLIDA ? Pasando de nivel");
+                HandleWin();
+            }
+            else
+            {
+                Debug.Log($"[LevelLoader] ? Demasiado rápida ({speed:F2} > {maxEntrySpeed}) ? Fail");
+                HandleFail();
+            }
+        }
     }
 
     void HandleWin()
@@ -50,19 +63,14 @@ public class LevelLoader : MonoBehaviour
         ball.SetCanShoot(false);
 
         if (!string.IsNullOrEmpty(nextSceneName))
-        {
-            // Small delay so the player sees the ball drop in
             Invoke(nameof(LoadNextLevel), 1.5f);
-        }
         else
-        {
-            if (winUI) winUI.SetActive(true);   // final level
-        }
+            if (winUI) winUI.SetActive(true);
     }
 
     void HandleFail()
     {
-        // Too fast — bounce out is handled by physics; just show feedback
+        levelFinished = false;
         if (failUI) failUI.SetActive(true);
         Invoke(nameof(HideFailUI), 1.5f);
     }
@@ -74,7 +82,12 @@ public class LevelLoader : MonoBehaviour
         if (failUI) failUI.SetActive(false);
     }
 
-    // ?? Retry / restart helpers (call from UI buttons) ????????????????
     public void RestartLevel() => SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    public void LoadScene(string name) => SceneManager.LoadScene(name);
+
+    // Dibuja el radio del hoyo en la Scene view
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, holeRadius);
+    }
 }

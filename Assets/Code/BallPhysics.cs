@@ -27,6 +27,9 @@ public class BallPhysics : MonoBehaviour
     public int trajectorySteps = 40;
     public float simulationStep = 0.05f;
 
+    [Header("Visual Scale")]
+    public float speedVisualScale = 10f;
+
     // ?? Runtime state ????????????????????????????????????????????????
     [HideInInspector] public Vector3 velocity;
     [HideInInspector] public float currentFriction;   // set each frame by TerrainZone
@@ -158,7 +161,7 @@ public class BallPhysics : MonoBehaviour
     // ?????????????????????????????????????????????????????????????????
     void MoveWithCollisions(float dt)
     {
-        float remainingDist = velocity.magnitude * dt;
+        float remainingDist = velocity.magnitude * dt * speedVisualScale; // ? escala visual
         Vector3 dir = velocity.normalized;
         int maxBounces = 3;
 
@@ -167,7 +170,6 @@ public class BallPhysics : MonoBehaviour
             if (Physics.SphereCast(transform.position, ballRadius, dir, out RaycastHit hit, remainingDist))
             {
                 transform.position = hit.point + hit.normal * ballRadius;
-
                 float e = GetRestitution(hit.collider);
                 velocity = Vector3.Reflect(velocity, hit.normal) * e;
                 dir = velocity.normalized;
