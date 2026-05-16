@@ -16,14 +16,13 @@ public class BallPhysics : MonoBehaviour
     public float simulationStep = 0.1f;
 
     [Header("Air Resistance (F = 0.5 * rho * v^2 * Cd * A)")]
-    public float airDensity = 1.225f;   // rho (kg/m³)
-    public float dragCoeff = 0.47f;    // Cd  (esfera)
-    public float ballRadius = 0.5f;     // r   (m)
+    public float airDensity = 1.225f;
+    public float dragCoeff = 0.47f;
+    public float ballRadius = 0.5f;
 
-    private float crossSectionArea;     // ? * r²
+    private float crossSectionArea;
     private float currentForce;
     private bool isCharging;
-    private Vector3 dir;
 
     void Awake()
     {
@@ -85,7 +84,6 @@ public class BallPhysics : MonoBehaviour
 
             vel += Physics.gravity * simulationStep;
 
-            // Misma lógica que ApplyForces: fórmula completa solo sobre y > 1m
             if (pos.y > 1f)
             {
                 float speed = vel.magnitude;
@@ -129,7 +127,6 @@ public class BallPhysics : MonoBehaviour
 
     void MoveWithCollisions(float dt)
     {
-        float radius = 0.5f;
         float remainingDistance = velocity.magnitude * dt;
         Vector3 direction = velocity.normalized;
         int maxBounces = 3;
@@ -137,10 +134,15 @@ public class BallPhysics : MonoBehaviour
         while (remainingDistance > 0.001f && maxBounces-- > 0)
         {
             RaycastHit hit;
-            if (Physics.SphereCast(transform.position, radius, direction, out hit, remainingDistance))
+            if (Physics.SphereCast(transform.position, ballRadius, direction, out hit, remainingDistance))
             {
-                transform.position = hit.point + hit.normal * radius;
-                velocity = Vector3.Reflect(velocity, hit.normal) * 0.6f;
+                transform.position = hit.point + hit.normal * ballRadius;
+
+                float e = 0.6f;
+                ObstacleProperties props = hit.collider.GetComponent<ObstacleProperties>();
+                if (props != null) e = props.restitution;
+
+                velocity = Vector3.Reflect(velocity, hit.normal) * e;
                 direction = velocity.normalized;
                 remainingDistance -= hit.distance;
             }
@@ -154,19 +156,14 @@ public class BallPhysics : MonoBehaviour
 
     void ApplyForces()
     {
-        // Gravedad
         acceleration += Physics.gravity;
 
-        // Fricción de rodadura
         if (velocity.magnitude > 0.01f)
         {
             Vector3 friction = -velocity.normalized * rollingFriction;
             acceleration += (friction / mass);
         }
 
-        // Resistencia del aire:
-        // - Por encima de y > 1m: fórmula física completa F = 0.5 * rho * v² * Cd * A
-        // - Por debajo:           drag lineal simple (comportamiento original)
         if (transform.position.y > 1f)
         {
             float speed = velocity.magnitude;
@@ -202,8 +199,7 @@ public class BallPhysics : MonoBehaviour
 
     void HandleCollisions()
     {
-        float radius = 0.5f;
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius);
+        Collider[] hits = Physics.OverlapSphere(transform.position, ballRadius);
 
         foreach (Collider col in hits)
         {
@@ -214,15 +210,19 @@ public class BallPhysics : MonoBehaviour
                 float dist = dir.magnitude;
                 if (dist == 0f) continue;
 
-                float penetration = radius - dist;
+                float penetration = ballRadius - dist;
                 if (penetration > 0f)
                 {
                     Vector3 normal = dir.normalized;
                     transform.position += normal * penetration;
 
+                    float e = 0.6f;
+                    ObstacleProperties props = col.GetComponent<ObstacleProperties>();
+                    if (props != null) e = props.restitution;
+
                     float vDot = Vector3.Dot(velocity, normal);
                     if (vDot < 0f)
-                        velocity -= normal * vDot * 1.5f;
+                        velocity -= normal * vDot * (1f + e);
                 }
             }
         }
