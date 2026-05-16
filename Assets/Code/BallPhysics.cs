@@ -15,31 +15,37 @@ public class BallPhysics : MonoBehaviour
     public int trajectorySteps = 30;
     public float simulationStep = 0.1f;
 
+    [Header("Air Resistance (F = 0.5 * rho * v^2 * Cd * A)")]
+    public float airDensity = 1.225f;   // rho (kg/m³)
+    public float dragCoeff = 0.47f;    // Cd  (esfera)
+    public float ballRadius = 0.5f;     // r   (m)
+
+    private float crossSectionArea;     // ? * r²
     private float currentForce;
     private bool isCharging;
-
-
     private Vector3 dir;
+
+    void Awake()
+    {
+        crossSectionArea = Mathf.PI * ballRadius * ballRadius;
+    }
 
     void Update()
     {
         float dt = Time.deltaTime;
 
-        // INICIO carga
         if (Input.GetMouseButtonDown(0))
         {
             isCharging = true;
             currentForce = 0f;
         }
 
-        // CARGA mientras mantienes pulsado
         if (Input.GetMouseButton(0) && isCharging)
         {
             currentForce += chargeRate * dt;
             currentForce = Mathf.Clamp(currentForce, 0f, maxForcePower);
         }
 
-        // DISPARO al soltar
         if (Input.GetMouseButtonUp(0) && isCharging)
         {
             ApplyImpulse(currentForce);
@@ -48,14 +54,9 @@ public class BallPhysics : MonoBehaviour
         }
 
         if (isCharging)
-        {
             DrawTrajectory();
-        }
-        else
-        {
-            if (lineRenderer != null)
-                lineRenderer.positionCount = 0;
-        }
+        else if (lineRenderer != null)
+            lineRenderer.positionCount = 0;
 
         ApplyForces();
 
@@ -72,13 +73,10 @@ public class BallPhysics : MonoBehaviour
 
     void DrawTrajectory()
     {
-        if (lineRenderer == null) return;
-        if (!isCharging) return;
+        if (lineRenderer == null || !isCharging) return;
 
         Vector3 pos = transform.position;
-
         Vector3 vel = GetPredictedInitialVelocity();
-
         Vector3[] points = new Vector3[trajectorySteps];
 
         for (int i = 0; i < trajectorySteps; i++)
@@ -86,7 +84,18 @@ public class BallPhysics : MonoBehaviour
             points[i] = pos;
 
             vel += Physics.gravity * simulationStep;
-            vel *= (1f - airDrag * simulationStep);
+
+            // Misma lógica que ApplyForces: fórmula completa solo sobre y > 1m
+            if (pos.y > 1f)
+            {
+                float speed = vel.magnitude;
+                float dragMag = 0.5f * airDensity * speed * speed * dragCoeff * crossSectionArea;
+                vel -= vel.normalized * (dragMag / mass) * simulationStep;
+            }
+            else
+            {
+                vel *= (1f - airDrag * simulationStep);
+            }
 
             pos += vel * simulationStep;
 
@@ -107,7 +116,6 @@ public class BallPhysics : MonoBehaviour
         Vector3 dir = Camera.main.transform.forward;
         dir.y = 0f;
         dir.Normalize();
-
         return dir * currentForce;
     }
 
@@ -116,7 +124,6 @@ public class BallPhysics : MonoBehaviour
         Vector3 dir = Camera.main.transform.forward;
         dir.y = 0f;
         dir.Normalize();
-
         velocity += dir * force;
     }
 
@@ -125,19 +132,15 @@ public class BallPhysics : MonoBehaviour
         float radius = 0.5f;
         float remainingDistance = velocity.magnitude * dt;
         Vector3 direction = velocity.normalized;
-
         int maxBounces = 3;
 
         while (remainingDistance > 0.001f && maxBounces-- > 0)
         {
             RaycastHit hit;
-
             if (Physics.SphereCast(transform.position, radius, direction, out hit, remainingDistance))
             {
                 transform.position = hit.point + hit.normal * radius;
-
                 velocity = Vector3.Reflect(velocity, hit.normal) * 0.6f;
-
                 direction = velocity.normalized;
                 remainingDistance -= hit.distance;
             }
@@ -151,6 +154,7 @@ public class BallPhysics : MonoBehaviour
 
     void ApplyForces()
     {
+        // Gravedad
         acceleration += Physics.gravity;
 
         // Fricción de rodadura
@@ -160,9 +164,24 @@ public class BallPhysics : MonoBehaviour
             acceleration += (friction / mass);
         }
 
-        // Resistencia del aire
-        Vector3 drag = -velocity * airDrag;
-        acceleration += drag / mass;
+        // Resistencia del aire:
+        // - Por encima de y > 1m: fórmula física completa F = 0.5 * rho * v² * Cd * A
+        // - Por debajo:           drag lineal simple (comportamiento original)
+        if (transform.position.y > 1f)
+        {
+            float speed = velocity.magnitude;
+            if (speed > 0.001f)
+            {
+                float dragMag = 0.5f * airDensity * speed * speed * dragCoeff * crossSectionArea;
+                Vector3 dragForce = -velocity.normalized * dragMag;
+                acceleration += dragForce / mass;
+            }
+        }
+        else
+        {
+            Vector3 drag = -velocity * airDrag;
+            acceleration += drag / mass;
+        }
     }
 
     public void AddForce(Vector3 force)
@@ -172,16 +191,11 @@ public class BallPhysics : MonoBehaviour
 
     void ApplyVelocityDamping(float dt)
     {
-        // Fricción continua (muy importante)
         float speed = velocity.magnitude;
-
         if (speed > 0.001f)
         {
             float frictionFactor = 1f - (rollingFriction * dt);
-
-            if (frictionFactor < 0f)
-                frictionFactor = 0f;
-
+            if (frictionFactor < 0f) frictionFactor = 0f;
             velocity *= frictionFactor;
         }
     }
@@ -189,7 +203,6 @@ public class BallPhysics : MonoBehaviour
     void HandleCollisions()
     {
         float radius = 0.5f;
-
         Collider[] hits = Physics.OverlapSphere(transform.position, radius);
 
         foreach (Collider col in hits)
@@ -198,26 +211,18 @@ public class BallPhysics : MonoBehaviour
             {
                 Vector3 closest = col.ClosestPoint(transform.position);
                 Vector3 dir = transform.position - closest;
-
                 float dist = dir.magnitude;
-
                 if (dist == 0f) continue;
 
                 float penetration = radius - dist;
-
                 if (penetration > 0f)
                 {
                     Vector3 normal = dir.normalized;
-
-                    // Sacar la bola fuera de la colisión
                     transform.position += normal * penetration;
 
-                    // Si la velocidad va hacia dentro, reflejar
                     float vDot = Vector3.Dot(velocity, normal);
                     if (vDot < 0f)
-                    {
-                        velocity -= normal * vDot * 1.5f; // rebote suave
-                    }
+                        velocity -= normal * vDot * 1.5f;
                 }
             }
         }
