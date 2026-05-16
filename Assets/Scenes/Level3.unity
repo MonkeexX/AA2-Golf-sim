@@ -964,20 +964,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a752dfe1483659438c1c277ad4338bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mass: 10
-  velocity: {x: 0, y: 0, z: 0}
-  acceleration: {x: 0, y: 0, z: 0}
-  rollingFriction: 0.01
-  airDrag: 0.5
-  forcePower: 100
-  maxForcePower: 300
-  chargeRate: 200
+  mass: 1
+  ballRadius: 0.5
+  maxForcePower: 5
+  chargeRate: 4
+  defaultFriction: 0.2
+  airDensity: 1.225
+  dragCoeff: 0.47
   lineRenderer: {fileID: 918962496}
   trajectorySteps: 100
   simulationStep: 0.1
-  airDensity: 1.225
-  dragCoeff: 0.47
-  ballRadius: 0.5
+  speedVisualScale: 10
+  velocity: {x: 0, y: 0, z: 0}
   currentFriction: 0.2
 --- !u!4 &949161560 stripped
 Transform:
@@ -998,6 +996,75 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ball: {fileID: 949161556}
   forcePower: 10
+--- !u!1001 &968301541
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1444775914616795929, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: ball
+      value: 
+      objectReference: {fileID: 949161556}
+    - target: {fileID: 1444775914616795929, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: nextSceneName
+      value: Level1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1444775914616795929, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: ballSpawnPoint
+      value: 
+      objectReference: {fileID: 949161560}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 26.926292
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 161.3479
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1837204645280102593, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5306591521147169271, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
+      propertyPath: m_Name
+      value: Banderin
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 8c91602801f28b34ab8e1c2be3ae818c, type: 3}
 --- !u!1 &1015064592
 GameObject:
   m_ObjectHideFlags: 0
@@ -1223,8 +1290,8 @@ Transform:
   m_GameObject: {fileID: 1130861906}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 111.11002, y: 1, z: 569.4107}
+  m_LocalPosition: {x: 0, y: 0, z: 118.1}
+  m_LocalScale: {x: 111.11002, y: 1, z: 269.24753}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2239,6 +2306,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 3486918021905588661, guid: 6036af1ef1c9f7647a6d8dee384dc68b, type: 3}
+      propertyPath: m_TagString
+      value: Ball
+      objectReference: {fileID: 0}
     - target: {fileID: 9106389137671897206, guid: 6036af1ef1c9f7647a6d8dee384dc68b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.1
@@ -2314,3 +2385,4 @@ SceneRoots:
   - {fileID: 1573439863}
   - {fileID: 1397826307}
   - {fileID: 681729392}
+  - {fileID: 968301541}
