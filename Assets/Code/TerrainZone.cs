@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Sobreescribe la fricción del PhysicsManager mientras la bola está dentro.
-/// Tipos: Césped µ=0.4 | Hielo µ=0.1 | Arena µ=0.6
-/// </summary>
 [RequireComponent(typeof(BoxCollider))]
 public class TerrainZone : MonoBehaviour
 {

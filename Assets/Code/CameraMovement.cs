@@ -11,7 +11,7 @@ public class CameraMovement : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButton(1)) // botón derecho para rotar cámara
+        if (Input.GetMouseButton(1)) // Right button to move camera
         {
             yaw += Input.GetAxis("Mouse X") * sensitivity;
             pitch -= Input.GetAxis("Mouse Y") * sensitivity;

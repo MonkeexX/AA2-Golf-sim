@@ -1,15 +1,11 @@
 using UnityEngine;
 
-/// <summary>
-/// Aplica fuerza de viento constante a la bola mientras está dentro.
-/// Zona de resistencia del aire para Nivel 2.
-/// </summary>
 [RequireComponent(typeof(BoxCollider))]
 public class AirZone : MonoBehaviour
 {
     public BallController ball;
 
-    [Header("Viento")]
+    [Header("Wind")]
     public Vector3 windDirection = Vector3.forward;
     public float windStrength = 20f;
 
