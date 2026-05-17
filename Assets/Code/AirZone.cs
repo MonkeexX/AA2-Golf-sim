@@ -1,11 +1,15 @@
 using UnityEngine;
 
+/// <summary>
+/// Aplica fuerza de viento constante a la bola mientras está dentro.
+/// Zona de resistencia del aire para Nivel 2.
+/// </summary>
 [RequireComponent(typeof(BoxCollider))]
 public class AirZone : MonoBehaviour
 {
-    public BallPhysics ball;
+    public BallController ball;
 
-    [Header("Wind")]
+    [Header("Viento")]
     public Vector3 windDirection = Vector3.forward;
     public float windStrength = 20f;
 
@@ -15,16 +19,17 @@ public class AirZone : MonoBehaviour
 
         Vector3 local = transform.InverseTransformPoint(ball.transform.position);
         bool inside = Mathf.Abs(local.x) <= 0.5f &&
-                      Mathf.Abs(local.y) <= 0.5f &&
-                      Mathf.Abs(local.z) <= 0.5f;
+                        Mathf.Abs(local.y) <= 0.5f &&
+                        Mathf.Abs(local.z) <= 0.5f;
 
         if (inside)
-            ball.AddForce(windDirection.normalized * windStrength);
+            ball.physics.AddForce(windDirection.normalized * windStrength);
     }
 
     void OnDrawGizmos()
     {
         Gizmos.color = Color.cyan;
+        Gizmos.DrawWireCube(transform.position, transform.lossyScale);
         Gizmos.DrawRay(transform.position, windDirection.normalized * 3f);
     }
 }

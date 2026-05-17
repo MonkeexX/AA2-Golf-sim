@@ -1,213 +1,240 @@
 using UnityEngine;
 
-public class BallPhysics : MonoBehaviour
+/// <summary>
+/// Motor de física personalizado de la bola.
+/// Implementa:
+///   - Gravedad y planos inclinados (Fparallel = mg·sin?, Fnormal = mg·cos?)
+///   - Fricción de rodadura (? = -µr·Fnormal·r)
+///   - Tensor de inercia esfera (I = 2/5·mr²)
+///   - Velocidad angular (? = v/r)
+///   - Resistencia del aire (F = ½?v²CdA, activa para y > 1m)
+///   - Colisiones con coeficiente de restitución
+///   - Detección de rebotes en borde
+/// NO usa Rigidbody de Unity.
+/// </summary>
+public class PhysicsManager : MonoBehaviour
 {
-    [Header("Ball Properties")]
+    [Header("Propiedades de la Bola")]
     public float mass = 1f;
     public float ballRadius = 0.5f;
 
-    [Header("Shooting")]
-    public float maxForcePower = 300f;
-    public float chargeRate = 200f;
-
-    [Header("Friction")]
-    public float defaultFriction = 0.2f;   // fallback when no TerrainZone overrides
-
-    [Header("Air Resistance  F = ½?v²CdA")]
+    [Header("Resistencia del Aire  F = ½?v²CdA")]
     public float airDensity = 1.225f;
     public float dragCoeff = 0.47f;
 
-    [Header("Trajectory Preview")]
-    public LineRenderer lineRenderer;
-    public int trajectorySteps = 40;
-    public float simulationStep = 0.05f;
+    [Header("Fricción por defecto (césped)")]
+    public float defaultFriction = 0.4f;
 
-    [Header("Visual Scale")]
-    public float speedVisualScale = 10f;
+    [Header("Escala Visual de Velocidad")]
+    public float speedVisualScale = 25f;
 
-    [Header("Slope / Ramp")]
-    public float groundCheckDistance = 0.6f; // un poco más que el radio
-    private Vector3 groundNormal = Vector3.up;
-    private bool isGrounded = false;
-
+    // ?? Estado runtime ????????????????????????????????????????????????
     [HideInInspector] public Vector3 velocity;
-    [HideInInspector] public float currentFriction;   // set each frame by TerrainZone
+    [HideInInspector] public float currentFriction;
+    [HideInInspector] public Vector3 angularVelocity;
 
     private Vector3 acceleration;
     private float crossSectionArea;
-    private float currentForce;
-    private bool isCharging;
-    private bool canShoot = true;
+    private float inertia;             // I = (2/5)mr²
+    private Vector3 groundNormal = Vector3.up;
+    private bool isGrounded = false;
 
-    public System.Action OnShotFired;
+    private LevelLoader levelLoader;
 
-    void Awake()
+    // ?????????????????????????????????????????????????????????????????
+    public void Init()
     {
         crossSectionArea = Mathf.PI * ballRadius * ballRadius;
+        inertia = 0.4f * mass * ballRadius * ballRadius; // (2/5)mr²
         currentFriction = defaultFriction;
+        levelLoader = FindObjectOfType<LevelLoader>();
     }
 
-    void Update()
+    // ?????????????????????????????????????????????????????????????????
+    //  Tick principal — llamado desde BallController.FixedUpdate
+    // ?????????????????????????????????????????????????????????????????
+    public void Tick(float dt, Transform ballTransform)
     {
-        if (!canShoot) return;
-
-        HandleInput();
-
+        // TerrainZone sobreescribe currentFriction en su Update()
+        // Resetear aquí garantiza que si la bola sale de la zona vuelve al default
         currentFriction = defaultFriction;
-    }
 
-    void FixedUpdate()
-    {
-        float dt = Time.fixedDeltaTime;
-
-        AccumulateForces();
+        DetectGround(ballTransform);
+        AccumulateForces(ballTransform);
 
         velocity += acceleration * dt;
 
-        ApplyFrictionDamping(dt);
+        ApplyAirDamping(dt);
+        UpdateAngularVelocity(dt, ballTransform);
 
-        MoveWithCollisions(dt);
-
-        HandleOverlapCollisions();
+        MoveWithCollisions(dt, ballTransform);
+        HandleOverlapCollisions(ballTransform);
 
         acceleration = Vector3.zero;
     }
 
-    void HandleInput()
+    // ?????????????????????????????????????????????????????????????????
+    //  Detección de suelo y normal
+    // ?????????????????????????????????????????????????????????????????
+    void DetectGround(Transform t)
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            isCharging = true;
-            currentForce = 0f;
-        }
+        isGrounded = Physics.SphereCast(
+            t.position,
+            ballRadius * 0.9f,
+            Physics.gravity.normalized,
+            out RaycastHit hit,
+            ballRadius * 1.2f
+        );
 
-        if (Input.GetMouseButton(0) && isCharging)
-            currentForce = Mathf.Clamp(currentForce + chargeRate * Time.deltaTime, 0f, maxForcePower);
-
-        if (Input.GetMouseButtonUp(0) && isCharging)
-        {
-            FireImpulse(currentForce);
-            isCharging = false;
-            currentForce = 0f;
-        }
-
-        if (isCharging)
-            DrawTrajectory();
-        else if (lineRenderer != null)
-            lineRenderer.positionCount = 0;
+        groundNormal = isGrounded ? hit.normal : Vector3.up;
     }
 
-    void FireImpulse(float force)
+    // ?????????????????????????????????????????????????????????????????
+    //  Acumulación de fuerzas
+    // ?????????????????????????????????????????????????????????????????
+    void AccumulateForces(Transform t)
     {
-        velocity += AimDirection() * force;
-        OnShotFired?.Invoke();
-    }
-
-    Vector3 AimDirection()
-    {
-        Vector3 dir = Camera.main.transform.forward;
-        dir.y = 0f;
-        return dir.normalized;
-    }
-    void AccumulateForces()
-    {
-        DetectGround();
+        float g = Physics.gravity.magnitude;
+        Vector3 gravityDir = Physics.gravity.normalized;
 
         if (isGrounded)
         {
-            // F_parallel = mg·sin?  ?  componente que acelera la bola cuesta abajo
-            // F_normal   = mg·cos?  ?  componente perpendicular (no mueve la bola)
-            Vector3 gravityDir = Physics.gravity.normalized;
-            float g = Physics.gravity.magnitude;
-
+            // ?? Plano inclinado ???????????????????????????????????????
+            // Fparallel = mg·sin?  ?  mueve la bola por la rampa
+            // Fnormal   = mg·cos?  ?  perpendicular al suelo
             Vector3 gravParallel = Vector3.ProjectOnPlane(gravityDir, groundNormal) * g;
+            float cosTheta = Mathf.Max(0f, Vector3.Dot(-gravityDir, groundNormal));
+            float normalForce = mass * g * cosTheta;
+
             acceleration += gravParallel;
 
-            // Fricción en rampa usa F_normal = mg·cos?
-            float cosTheta = Vector3.Dot(-gravityDir, groundNormal); // = cos?
-            float normalForce = mass * g * cosTheta;
-            float frictionDecel = currentFriction * normalForce / mass;   // µ·g·cos?
-
+            // ?? Fricción de rodadura ??????????????????????????????????
+            // ? = -µr · Fnormal · r  ?  a = µ·Fnormal / mass
             if (velocity.magnitude > 0.001f)
-                acceleration -= velocity.normalized * frictionDecel;
+            {
+                float frictionMag = currentFriction * normalForce / mass;
+                acceleration -= velocity.normalized * frictionMag;
+            }
 
-            acceleration += -velocity * (0.05f / mass);
+            // Drag lineal suave en suelo
+            acceleration += -velocity * (0.02f / mass);
         }
         else
         {
+            // ?? En el aire: gravedad completa ?????????????????????????
             acceleration += Physics.gravity;
 
-            float speed = velocity.magnitude;
-            if (speed > 0.001f)
+            // ?? Resistencia del aire activa para y > 1m ???????????????
+            // F = ½?v²CdA
+            if (t.position.y > 1f)
             {
-                float dragMag = 0.5f * airDensity * speed * speed * dragCoeff * crossSectionArea;
-                acceleration += -velocity.normalized * (dragMag / mass);
+                float speed = velocity.magnitude;
+                if (speed > 0.001f)
+                {
+                    float dragMag = 0.5f * airDensity * speed * speed
+                                   * dragCoeff * crossSectionArea;
+                    acceleration += -velocity.normalized * (dragMag / mass);
+                }
             }
         }
     }
 
-    void DetectGround()
+    // ?????????????????????????????????????????????????????????????????
+    //  Damping en aire
+    // ?????????????????????????????????????????????????????????????????
+    void ApplyAirDamping(float dt)
     {
-        if (Physics.SphereCast(transform.position, ballRadius * 0.9f, Physics.gravity.normalized,
-            out RaycastHit hit, groundCheckDistance))
-        {
-            groundNormal = hit.normal;
-            isGrounded = true;
-        }
-        else
-        {
-            groundNormal = Vector3.up;
-            isGrounded = false;
-        }
-    }
-
-    void ApplyFrictionDamping(float dt)
-    {
-        if (isGrounded) return; 
-
+        if (isGrounded) return;
         float speed = velocity.magnitude;
         if (speed < 0.001f) { velocity = Vector3.zero; return; }
         velocity *= Mathf.Clamp01(1f - 0.01f * dt);
     }
 
-    void OnDrawGizmos()
+    // ?????????????????????????????????????????????????????????????????
+    //  Velocidad angular y rotación visual
+    //  ? = v/r
+    //  ? = -µr · Fnormal · r
+    //  I = (2/5)mr²  ?  ? = ?/I
+    // ?????????????????????????????????????????????????????????????????
+    void UpdateAngularVelocity(float dt, Transform t)
     {
-        Gizmos.color = isGrounded ? Color.green : Color.red;
-        Gizmos.DrawRay(transform.position, groundNormal * 1.5f);
+        if (!isGrounded || velocity.magnitude < 0.001f)
+        {
+            // En el aire: mantener rotación con damping suave
+            angularVelocity *= 0.99f;
+            t.Rotate(angularVelocity * Mathf.Rad2Deg * dt, Space.World);
+            return;
+        }
+
+        float g = Physics.gravity.magnitude;
+        float cosTheta = Mathf.Max(0f, Vector3.Dot(
+                                  -Physics.gravity.normalized, groundNormal));
+        float normalForce = mass * g * cosTheta;
+
+        // Torque de rodadura: ? = -µr · Fnormal · r
+        float torqueMag = currentFriction * normalForce * ballRadius;
+
+        // Aceleración angular: ? = ? / I
+        float alpha = torqueMag / inertia;
+
+        // Eje perpendicular a la dirección de movimiento
+        Vector3 rotAxis = Vector3.Cross(
+                                  velocity.normalized, groundNormal).normalized;
+
+        // Integrar ? hacia el valor cinemático ? = v/r
+        float currentOmega = angularVelocity.magnitude;
+        float targetOmega = velocity.magnitude / ballRadius;
+        float newOmega = Mathf.MoveTowards(currentOmega, targetOmega, alpha * dt);
+
+        angularVelocity = rotAxis * newOmega;
+
+        // Rotar visualmente la bola
+        t.Rotate(angularVelocity * Mathf.Rad2Deg * dt, Space.World);
     }
 
-    void MoveWithCollisions(float dt)
+    // ?????????????????????????????????????????????????????????????????
+    //  Movimiento con colisiones (SphereCast)
+    // ?????????????????????????????????????????????????????????????????
+    void MoveWithCollisions(float dt, Transform t)
     {
-        float remainingDist = velocity.magnitude * dt * speedVisualScale; 
+        float remainingDist = velocity.magnitude * dt * speedVisualScale;
         Vector3 dir = velocity.normalized;
         int maxBounces = 3;
 
         while (remainingDist > 0.001f && maxBounces-- > 0)
         {
-            if (Physics.SphereCast(transform.position, ballRadius, dir, out RaycastHit hit, remainingDist))
+            if (Physics.SphereCast(t.position, ballRadius, dir,
+                out RaycastHit hit, remainingDist))
             {
-                transform.position = hit.point + hit.normal * ballRadius;
+                t.position = hit.point + hit.normal * ballRadius;
                 float e = GetRestitution(hit.collider);
                 velocity = Vector3.Reflect(velocity, hit.normal) * e;
                 dir = velocity.normalized;
                 remainingDist -= hit.distance;
+
+                if (hit.collider.CompareTag("Border"))
+                    levelLoader?.RegisterBorderContact();
             }
             else
             {
-                transform.position += dir * remainingDist;
+                t.position += dir * remainingDist;
                 break;
             }
         }
     }
 
-    void HandleOverlapCollisions()
+    // ?????????????????????????????????????????????????????????????????
+    //  Colisiones por solapamiento
+    // ?????????????????????????????????????????????????????????????????
+    void HandleOverlapCollisions(Transform t)
     {
-        foreach (Collider col in Physics.OverlapSphere(transform.position, ballRadius))
+        foreach (Collider col in Physics.OverlapSphere(t.position, ballRadius))
         {
-            if (col.attachedRigidbody != null && !col.attachedRigidbody.isKinematic) continue;
+            if (col.attachedRigidbody != null &&
+                !col.attachedRigidbody.isKinematic) continue;
 
-            Vector3 closest = col.ClosestPoint(transform.position);
-            Vector3 dir = transform.position - closest;
+            Vector3 closest = col.ClosestPoint(t.position);
+            Vector3 dir = t.position - closest;
             float dist = dir.magnitude;
             if (dist < 0.0001f) continue;
 
@@ -215,15 +242,37 @@ public class BallPhysics : MonoBehaviour
             if (penetration <= 0f) continue;
 
             Vector3 normal = dir.normalized;
-            transform.position += normal * penetration;
+            t.position += normal * penetration;
 
             float vDot = Vector3.Dot(velocity, normal);
             if (vDot < 0f)
             {
                 float e = GetRestitution(col);
                 velocity -= normal * vDot * (1f + e);
+
+                if (col.CompareTag("Border"))
+                    levelLoader?.RegisterBorderContact();
             }
         }
+    }
+
+    // ?????????????????????????????????????????????????????????????????
+    //  API pública
+    // ?????????????????????????????????????????????????????????????????
+
+    /// <summary>Fuerzas externas: viento, zonas especiales, etc.</summary>
+    public void AddForce(Vector3 force) => acceleration += force / mass;
+
+    /// <summary>Impulso instantáneo al disparar.</summary>
+    public void ApplyImpulse(Vector3 impulse) => velocity += impulse / mass;
+
+    public void ResetState(Vector3 spawnPos, Transform t)
+    {
+        t.position = spawnPos;
+        velocity = Vector3.zero;
+        acceleration = Vector3.zero;
+        angularVelocity = Vector3.zero;
+        currentFriction = defaultFriction;
     }
 
     float GetRestitution(Collider col)
@@ -232,58 +281,17 @@ public class BallPhysics : MonoBehaviour
         return props != null ? props.restitution : 0.6f;
     }
 
-
-    public void AddForce(Vector3 force) => acceleration += force / mass;
-
-    public void SetCanShoot(bool value)
+    // ?????????????????????????????????????????????????????????????????
+    //  Gizmos
+    // ?????????????????????????????????????????????????????????????????
+    public void DrawGizmos(Transform t)
     {
-        canShoot = value;
-        if (!value && lineRenderer != null)
-            lineRenderer.positionCount = 0;
-    }
+        // Verde = en suelo | Rojo = en aire
+        Gizmos.color = isGrounded ? Color.green : Color.red;
+        Gizmos.DrawRay(t.position, groundNormal * 1.5f);
 
-    public void ResetToPosition(Vector3 pos)
-    {
-        transform.position = pos;
-        velocity = Vector3.zero;
-        acceleration = Vector3.zero;
-        currentFriction = defaultFriction;
-        currentForce = 0f;
-        isCharging = false;
-        if (lineRenderer != null) lineRenderer.positionCount = 0;
-    }
-
-    void DrawTrajectory()
-    {
-        if (lineRenderer == null) return;
-
-        Vector3 pos = transform.position;
-        Vector3 vel = AimDirection() * currentForce;
-        Vector3[] points = new Vector3[trajectorySteps];
-
-        for (int i = 0; i < trajectorySteps; i++)
-        {
-            points[i] = pos;
-
-            vel += Physics.gravity * simulationStep;
-
-            if (pos.y > 1f)
-            {
-                float speed = vel.magnitude;
-                float dragMag = 0.5f * airDensity * speed * speed * dragCoeff * crossSectionArea;
-                vel -= vel.normalized * (dragMag / mass) * simulationStep;
-            }
-
-            pos += vel * simulationStep;
-
-            if (pos.y < 0f)
-            {
-                for (int j = i; j < trajectorySteps; j++) points[j] = pos;
-                break;
-            }
-        }
-
-        lineRenderer.positionCount = trajectorySteps;
-        lineRenderer.SetPositions(points);
+        // Dirección de velocidad
+        Gizmos.color = Color.blue;
+        Gizmos.DrawRay(t.position, velocity.normalized);
     }
 }
