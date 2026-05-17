@@ -35,7 +35,6 @@ public class LevelLoader : MonoBehaviour
 
         float dist = Vector3.Distance(ball.transform.position, transform.position);
 
-        // Log continuo para ver distancia en tiempo real
         Debug.Log($"[LevelLoader] Distancia al hoyo: {dist:F2} | Velocidad: {ball.velocity.magnitude:F2} m/s");
 
         if (dist <= holeRadius)
@@ -84,7 +83,6 @@ public class LevelLoader : MonoBehaviour
 
     public void RestartLevel() => SceneManager.LoadScene(SceneManager.GetActiveScene().name);
 
-    // Dibuja el radio del hoyo en la Scene view
     void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;

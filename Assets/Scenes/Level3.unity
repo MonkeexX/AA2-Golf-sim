@@ -966,15 +966,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mass: 1
   ballRadius: 0.5
-  maxForcePower: 5
-  chargeRate: 4
+  maxForcePower: 7
+  chargeRate: 5
   defaultFriction: 0.2
   airDensity: 1.225
   dragCoeff: 0.47
   lineRenderer: {fileID: 918962496}
   trajectorySteps: 100
   simulationStep: 0.1
-  speedVisualScale: 10
+  speedVisualScale: 20
+  groundCheckDistance: 0.1
   velocity: {x: 0, y: 0, z: 0}
   currentFriction: 0.2
 --- !u!4 &949161560 stripped

@@ -1,10 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Overrides ball friction while the ball is inside this trigger volume.
-/// Reset to defaultFriction is handled by BallPhysics.Update() each frame,
-/// so no explicit reset is needed here.
-/// </summary>
 [RequireComponent(typeof(BoxCollider))]
 public class TerrainZone : MonoBehaviour
 {
@@ -30,7 +25,6 @@ public class TerrainZone : MonoBehaviour
                       Mathf.Abs(local.y) <= 0.5f &&
                       Mathf.Abs(local.z) <= 0.5f;
 
-        // Only set; BallPhysics.Update() resets to default each frame first
         if (inside)
             ball.currentFriction = FrictionFor(terrainType);
     }

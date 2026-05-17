@@ -732,6 +732,7 @@ MonoBehaviour:
   trajectorySteps: 100
   simulationStep: 0.1
   speedVisualScale: 10
+  groundCheckDistance: 0.1
   velocity: {x: 0, y: 0, z: 0}
   currentFriction: 0.2
 --- !u!4 &949161560 stripped

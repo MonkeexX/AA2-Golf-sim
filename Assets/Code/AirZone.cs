@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Applies a constant wind force to the ball while it is inside this volume.
-/// Works with the air-resistance zone required by Level 2.
-/// </summary>
 [RequireComponent(typeof(BoxCollider))]
 public class AirZone : MonoBehaviour
 {
